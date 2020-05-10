@@ -3,6 +3,7 @@ QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
+CONFIG += console
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -16,16 +17,25 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    MainWindow.cpp \
+    MainWindow2.cpp \
+    MainWindow3.cpp \
+    MainWindow_1.cpp \
     PLable.cpp \
-    main.cpp \
-    MainWindow.cpp
+    main.cpp
 
 HEADERS += \
     MainWindow.h \
+    MainWindow2.h \
+    MainWindow3.h \
+    MainWindow_1.h \
     PLable.h
 
 FORMS += \
-    MainWindow.ui
+    MainWindow.ui \
+    MainWindow2.ui \
+    MainWindow3.ui \
+    MainWindow_1.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
