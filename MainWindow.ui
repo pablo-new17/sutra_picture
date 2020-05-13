@@ -222,6 +222,13 @@
               </property>
              </widget>
             </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="pushButton">
+              <property name="text">
+               <string>輸出</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>

@@ -286,23 +286,11 @@ void MainWindow::Ajust_Sutra()
 				else
 					Overlap = Check_Overlap(Overlap_Pixmap);
 
-				qDebug() << Overlap << Text->pos() << Word_X << Word_Y << Text->data(Sutra_Data_Index) << Text->data(Sutra_Data_Char) <<" ============ ";
+				qDebug() << Overlap << Text->pos() << Word_X << Word_Y << Text->data(Sutra_Data_Index) << Text->data(Sutra_Data_Char);
 			}
 			while (Overlap);
 		}
 	}
-
-//	QPointF Position = this->m_Background->mapFromScene(_test->pos());
-//	QPixmap box = pixmap.copy(Position.x(), Position.y(), Word_Width, Word_Height);
-//	qDebug() << Position << pixmap.width() << pixmap.height() << box.width() << box.height();
-
-//	if(pixmap.size() != box.size())
-//		ui->label_test->setPixmap(box);
-
-//	_test->setFont(font);
-//	qDebug() << Check_Overlap(box) << "--------------";
-
-
 
 	ui->horizontalSlider_Sutra_FontSpace->setEnabled(true);
 	ui->horizontalSlider_Sutra_FontDistance->setEnabled(true);
@@ -565,4 +553,29 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
 		this->m_Background->hide();
 	else
 		this->m_Background->show();
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+	this->m_Background->hide();
+
+	this->m_Scene->clearSelection();                                                  // Selections would also render to the file
+	this->m_Scene->setSceneRect(this->m_Scene->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
+	QImage image(this->m_Scene->sceneRect().size().toSize(), QImage::Format_ARGB32);  // Create the image with the exact size of the shrunk scene
+	image.fill(Qt::transparent);                                              // Start all pixels transparent
+
+	QPainter painter2(&image);
+	this->m_Scene->render(&painter2);
+
+	QString s = QFileDialog::getSaveFileName(this, tr("底稿輸出"), "",
+						 "Images (*.png *.xpm *.jpg)"
+						 );
+
+
+	image.save(s);
+
+
+//	pixmap2.save("C:/pablo.png");
+	this->m_Background->show();
+
 }

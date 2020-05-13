@@ -1,0 +1,6 @@
+#[VER]
+VER_Application_Version=1.0.0.20200510
+
+#[Revision Log]
+#Version	Author		Release note
+#1.0.0.20200510	Pablo		初步完成基本功能
