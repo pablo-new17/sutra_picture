@@ -5,6 +5,9 @@
 #include <QGraphicsScene>
 #include <QGraphicsRectItem>
 #include <QGraphicsItem>
+#include <QThread>
+
+#include "Background_Image_Worker.h"
 
 namespace Ui {
 	class MainWindow;
@@ -32,16 +35,6 @@ private slots:
 	void on_spinBox_Board_Left_valueChanged(int arg1);
 
 	void on_spinBox_Board_Right_valueChanged(int arg1);
-
-
-	void UI_Shown();
-	void gentle_zoom(double factor);
-
-	void Ajust_Paper();
-
-	void Ajust_Background();
-
-	void Ajust_Sutra();
 
 	void on_radioButton_Background_Text_clicked();
 
@@ -73,6 +66,22 @@ private slots:
 
 	void on_checkBox_stateChanged(int arg1);
 
+private slots:
+	void Background_Image(QImage image);
+
+
+	void Windows_Loaded();
+
+
+
+	void gentle_zoom(double factor);
+
+	void Ajust_Paper();
+
+	void Ajust_Background();
+
+	void Ajust_Sutra();
+
 	void on_pushButton_clicked();
 
 private:
@@ -85,13 +94,18 @@ private:
 	double _zoom_factor_base;
 	QPixmap m_Background_Image;
 
-	QGraphicsScene*		m_Scene;
-	QGraphicsRectItem*	m_Paper;
-	QGraphicsRectItem*	m_Boder;
-	QGraphicsPixmapItem*	m_Background;
-	QGraphicsItemGroup*	m_Sutra;
+	QGraphicsScene*			m_Scene;
+	QGraphicsRectItem*		m_Paper;
+	QGraphicsRectItem*		m_Boder;
+	QGraphicsPixmapItem*		m_Background;
+	QGraphicsItemGroup*		m_Sutra;
+
+	QThread				m_Back_thread;
+	Background_Image_Worker*	m_Back_worker;
 
 	QGraphicsSimpleTextItem* _test;
+
+
 private:
 	bool Check_Overlap(QPixmap Overlap_Pixmap);
 	// QObject interface

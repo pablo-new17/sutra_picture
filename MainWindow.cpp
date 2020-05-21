@@ -24,18 +24,31 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 
 	this->m_Scene = new QGraphicsScene(ui->graphicsView);
-	ui->graphicsView->setScene(this->m_Scene);
 	this->m_Scene->setBackgroundBrush(Qt::darkGray);
 
+	//紙張大小 (包含邊界)
+	this->m_Paper = new QGraphicsRectItem();
+	this->m_Paper->setBrush(QBrush(Qt::lightGray));
+
+	//實際紙張大小 (中央繪圖部分，不包含邊界)
+	this->m_Boder = new QGraphicsRectItem(this->m_Paper);
+	this->m_Boder->setBrush(QBrush(Qt::white));
+
+	//中間底圖
+	this->m_Background = new QGraphicsPixmapItem();
+
+	//經文文字
+	this->m_Sutra = new QGraphicsItemGroup();
+
+	this->m_Scene->addItem(this->m_Paper);
+	this->m_Scene->addItem(this->m_Background);
+	this->m_Scene->addItem(this->m_Sutra);
+
+	ui->graphicsView->setScene(this->m_Scene);
 	ui->graphicsView->viewport()->installEventFilter(this);
 	ui->graphicsView->setMouseTracking(true);
-	this->_zoom_factor_base = 1.0015;
 
-	ui->radioButton_Background_Text->setChecked(true);
-	this->on_radioButton_Background_Text_clicked();
-
-	QTimer::singleShot(500, this, &MainWindow::UI_Shown);
-
+	QTimer::singleShot(0, this, &MainWindow::Windows_Loaded);
 }
 
 MainWindow::~MainWindow()
@@ -46,82 +59,38 @@ MainWindow::~MainWindow()
 
 int MainWindow::Pixel_to_mm(int Pixel)
 {
-	QWindow *window=windowHandle();
+	QWindow *window = windowHandle();
 	QScreen *screen=window->screen();
 	double len_mm = Pixel * screen->physicalSize().width() / screen->geometry().width();
 
-	qDebug() << "Pixel :" << Pixel << " = " << len_mm << "mm";
+	qDebug() << Pixel << "Pixel =" << len_mm << "mm";
 
 	return static_cast<int>(len_mm);
 }
 
 int MainWindow::mm_to_Pixel(int mm)
 {
-	QWindow *window=windowHandle();
+	QWindow *window = windowHandle();
 	QScreen *screen=window->screen();
 	double Pixel = mm * screen->geometry().width() / screen->physicalSize().width();
 
-	qDebug() << "Pixel :" << Pixel << " = " << mm << "mm";
+	qDebug() << mm << "mm =" << Pixel << "Pixel";
 
 	return static_cast<int>(Pixel);
 }
 
 
-
-
-void MainWindow::on_toolBox_currentChanged(int index)
+void MainWindow::Windows_Loaded()
 {
-	switch (index)
-	{
-		case 0:
-			this->m_Background->setFlags(nullptr);
+	this->_zoom_factor_base = 1.0015;
 
-			this->m_Sutra->show();
+	this->m_Back_worker = new Background_Image_Worker();
+	this->m_Back_worker->moveToThread(&this->m_Back_thread);
+	connect(&this->m_Back_thread, &QThread::started, this->m_Back_worker, &Background_Image_Worker::run);
+	connect(&this->m_Back_thread, &QThread::finished, this->m_Back_worker, &Background_Image_Worker::deleteLater);
+	connect(this->m_Back_worker, &Background_Image_Worker::Background_Image, this, &MainWindow::Background_Image);
 
-			break;
-
-		case 1:
-			this->m_Sutra->hide();
-			this->m_Paper->setFlags(nullptr);
-			this->m_Background->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
-
-			this->Ajust_Background();
-
-			this->m_Background->show();
-			this->m_Paper->show();
-
-			break;
-
-		case 2:
-			this->m_Sutra->hide();
-			this->m_Background->hide();
-			this->m_Paper->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
-
-			this->Ajust_Paper();
-
-			this->m_Paper->show();
-
-			break;
-//		default:
-//			qDebug() << "unknow items selected";
-	}
-}
-
-void MainWindow::UI_Shown()
-{
-	this->m_Paper = new QGraphicsRectItem();
-	this->m_Paper->setBrush(QBrush(Qt::lightGray));
-
-	this->m_Boder = new QGraphicsRectItem(this->m_Paper);
-	this->m_Boder->setBrush(QBrush(Qt::white));
-
-	this->m_Background = new QGraphicsPixmapItem();
-	this->m_Sutra = new QGraphicsItemGroup();
-
-	this->m_Scene->addItem(this->m_Paper);
-	this->m_Scene->addItem(this->m_Boder);
-	this->m_Scene->addItem(this->m_Background);
-	this->m_Scene->addItem(this->m_Sutra);
+	this->m_Back_thread.start();
 
 	ui->toolBox->setCurrentIndex(2);
 }
@@ -129,24 +98,31 @@ void MainWindow::UI_Shown()
 
 void MainWindow::Ajust_Paper()
 {
-	int Paper_width = this->mm_to_Pixel(ui->spinBox_Paper_Width->value());
-	int Paper_height = this->mm_to_Pixel(ui->spinBox_Paper_Heigth->value());
-	this->m_Paper->setRect(0, 0, Paper_width, Paper_height);
-	this->m_Scene->setSceneRect(0, 0, Paper_width, Paper_height);
-	ui->graphicsView->fitInView(0, 0 , Paper_width , Paper_height, Qt::KeepAspectRatio);
+	//紙張大小，將 mm(公厘) 轉換成 螢幕上的像素 (pixel)
+	int Paper_width_Pixel = this->mm_to_Pixel(ui->spinBox_Paper_Width->value());
+	int Paper_height_Pixel = this->mm_to_Pixel(ui->spinBox_Paper_Heigth->value());
 
-	int m_Boder_x = this->mm_to_Pixel(ui->spinBox_Board_Left->value());
-	int m_Boder_y = this->mm_to_Pixel(ui->spinBox_Board_Top->value());
-	int m_Boder_width = Paper_width - m_Boder_x -  this->mm_to_Pixel(ui->spinBox_Board_Right->value());
-	int m_Boder_height = Paper_height - m_Boder_y - this->mm_to_Pixel(ui->spinBox_Board_Bottom->value());
+	//計算各個 邊界 的寬度大小
+	int m_Boder_Left_Width_Pixel = this->mm_to_Pixel(ui->spinBox_Board_Left->value());
+	int m_Boder_Right_Width_Pixel = this->mm_to_Pixel(ui->spinBox_Board_Right->value());
+	int m_Boder_Top_Height_Pixel = this->mm_to_Pixel(ui->spinBox_Board_Top->value());
+	int m_Boder_Bottom_Height_Pixel = this->mm_to_Pixel(ui->spinBox_Board_Bottom->value());
 
+	//邊界 的實際大小
+	int m_Boder_width = Paper_width_Pixel - m_Boder_Left_Width_Pixel - m_Boder_Right_Width_Pixel;
+	int m_Boder_height = Paper_height_Pixel - m_Boder_Top_Height_Pixel - m_Boder_Bottom_Height_Pixel;
 	m_Boder_width = (m_Boder_width>=0)? m_Boder_width : 0;
 	m_Boder_height = (m_Boder_height>=0)? m_Boder_height : 0;
 
-	this->m_Boder->setRect(m_Boder_x, m_Boder_y, m_Boder_width, m_Boder_height);
-	this->m_Sutra->setX(m_Boder_x);
-	this->m_Sutra->setY(m_Boder_y);
+	//邊界 的位置與大小
+	this->m_Boder->setRect(m_Boder_Left_Width_Pixel, m_Boder_Top_Height_Pixel, m_Boder_width, m_Boder_height);
+	this->m_Sutra->setX(m_Boder_Left_Width_Pixel);
+	this->m_Sutra->setY(m_Boder_Top_Height_Pixel);
 
+	//紙張 的位置
+	this->m_Paper->setRect(0, 0, Paper_width_Pixel, Paper_height_Pixel);
+	this->m_Scene->setSceneRect(0, 0, Paper_width_Pixel, Paper_height_Pixel);
+	ui->graphicsView->fitInView(0, 0 , Paper_width_Pixel , Paper_height_Pixel, Qt::KeepAspectRatio);
 }
 
 void MainWindow::Ajust_Background()
@@ -155,33 +131,7 @@ void MainWindow::Ajust_Background()
 
 	if(ui->radioButton_Background_Picture->isChecked())
 	{
-		int Scale_Factor = ui->horizontalSlider_Background_Size->value();
-		int Width = this->m_Boder->boundingRect().width() / 100 * Scale_Factor;
-		int Height = this->m_Boder->boundingRect().height() / 100 * Scale_Factor;
-
-		QPixmap Scaled_Image = this->m_Background_Image.scaled(Width, Height,
-							       Qt::KeepAspectRatio,
-							       Qt::SmoothTransformation);
-
-		QImage Source_Image = Scaled_Image.toImage();
-		QImage Grayscale_Image(Scaled_Image.size(), QImage::Format_Grayscale8);
-		QPainter painter(&Grayscale_Image);
-		painter.setCompositionMode(QPainter::CompositionMode_Source);
-		painter.fillRect(Grayscale_Image.rect(), Qt::transparent);
-		painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-		painter.drawImage(0, 0, Source_Image);
-		painter.end();
-
-		for(int y = 0; y < Grayscale_Image.size().height(); y++)
-			for(int x = 0; x < Grayscale_Image.size().width(); x++)
-			{
-				if((Grayscale_Image.pixel(x, y) & 0xFF) < Threadhold)
-					Grayscale_Image.setPixel(x, y, 0xFF000000);
-				else
-					Grayscale_Image.setPixel(x, y, 0xFFFFFFFF);
-			}
-
-		this->m_Background->setPixmap(QPixmap::fromImage(Grayscale_Image));
+		this->m_Back_worker->Restart();
 	}
 	else
 	{
@@ -286,11 +236,23 @@ void MainWindow::Ajust_Sutra()
 				else
 					Overlap = Check_Overlap(Overlap_Pixmap);
 
-				qDebug() << Overlap << Text->pos() << Word_X << Word_Y << Text->data(Sutra_Data_Index) << Text->data(Sutra_Data_Char);
+				qDebug() << Overlap << Text->pos() << Word_X << Word_Y << Text->data(Sutra_Data_Index) << Text->data(Sutra_Data_Char) <<" ============ ";
 			}
 			while (Overlap);
 		}
 	}
+
+//	QPointF Position = this->m_Background->mapFromScene(_test->pos());
+//	QPixmap box = pixmap.copy(Position.x(), Position.y(), Word_Width, Word_Height);
+//	qDebug() << Position << pixmap.width() << pixmap.height() << box.width() << box.height();
+
+//	if(pixmap.size() != box.size())
+//		ui->label_test->setPixmap(box);
+
+//	_test->setFont(font);
+//	qDebug() << Check_Overlap(box) << "--------------";
+
+
 
 	ui->horizontalSlider_Sutra_FontSpace->setEnabled(true);
 	ui->horizontalSlider_Sutra_FontDistance->setEnabled(true);
@@ -355,20 +317,55 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 
 	return false;
 }
-
 void MainWindow::gentle_zoom(double factor)
 {
-//	QTransform t = ui->graphicsView->transform();
-
 	ui->graphicsView->scale(factor, factor);
 	ui->graphicsView->centerOn(target_scene_pos);
-//	QPointF delta_viewport_pos = target_viewport_pos -
-//				     QPointF(ui->graphicsView->viewport()->width() / 2.0,
-//					     ui->graphicsView->viewport()->height() / 2.0);
-//	QPointF viewport_center = ui->graphicsView->mapFromScene(target_scene_pos) - delta_viewport_pos;
-
-//	ui->graphicsView->centerOn(ui->graphicsView->mapToScene(viewport_center.toPoint()));
 }
+
+
+
+
+void MainWindow::on_toolBox_currentChanged(int index)
+{
+	switch (index)
+	{
+		case 0:
+		{
+			this->m_Background->setFlags(nullptr);
+
+			this->m_Sutra->show();
+
+			break;
+		}
+		case 1:
+		{
+			this->m_Sutra->hide();
+			this->m_Back_worker->setBoder_Size(QSize(this->m_Boder->boundingRect().width(),
+								 this->m_Boder->boundingRect().height()));
+			this->m_Background->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
+
+			this->Ajust_Background();
+
+			this->m_Background->show();
+			this->m_Paper->show();
+
+			break;
+		}
+		case 2:
+		{
+			this->m_Sutra->hide();
+			this->m_Background->hide();
+
+			this->Ajust_Paper();
+
+			this->m_Paper->show();
+
+			break;
+		}
+	}
+}
+
 
 // 紙張大小
 void MainWindow::on_spinBox_Paper_Heigth_valueChanged(int arg1)
@@ -377,35 +374,30 @@ void MainWindow::on_spinBox_Paper_Heigth_valueChanged(int arg1)
 
 	this->Ajust_Paper();
 }
-
 void MainWindow::on_spinBox_Paper_Width_valueChanged(int arg1)
 {
 	Q_UNUSED(arg1)
 
 	this->Ajust_Paper();
 }
-
 void MainWindow::on_spinBox_Board_Top_valueChanged(int arg1)
 {
 	Q_UNUSED(arg1)
 
 	this->Ajust_Paper();
 }
-
 void MainWindow::on_spinBox_Board_Bottom_valueChanged(int arg1)
 {
 	Q_UNUSED(arg1)
 
 	this->Ajust_Paper();
 }
-
 void MainWindow::on_spinBox_Board_Left_valueChanged(int arg1)
 {
 	Q_UNUSED(arg1)
 
 	this->Ajust_Paper();
 }
-
 void MainWindow::on_spinBox_Board_Right_valueChanged(int arg1)
 {
 	Q_UNUSED(arg1)
@@ -413,19 +405,19 @@ void MainWindow::on_spinBox_Board_Right_valueChanged(int arg1)
 	this->Ajust_Paper();
 }
 
-// 背景圖
+// 背景 圖片
 void MainWindow::on_radioButton_Background_Text_clicked()
 {
+	this->m_Back_worker->setIsText(true);
 	ui->groupBox_Background_Text->show();
 	ui->groupBox_Background_Picture->hide();
 }
-
 void MainWindow::on_radioButton_Background_Picture_clicked()
 {
+	this->m_Back_worker->setIsText(false);
 	ui->groupBox_Background_Text->hide();
 	ui->groupBox_Background_Picture->show();
 }
-
 void MainWindow::on_pushButton_Background_File_clicked()
 {
 	QString fileName = QFileDialog::getOpenFileName(this, tr("選擇圖片"),
@@ -436,47 +428,44 @@ void MainWindow::on_pushButton_Background_File_clicked()
 	if(!fileName.isEmpty())
 	{
 		this->m_Background_Image = QPixmap(fileName);
+		this->m_Back_worker->setFilename(fileName);
 		ui->horizontalSlider_Background_Size->setValue(100);
 
 		qDebug() << "load file:" << fileName;
 	}
 }
-
 void MainWindow::on_horizontalSlider_Background_Size_valueChanged(int value)
 {
-	Q_UNUSED(value)
+	this->m_Back_worker->setImage_Scale_Factor(value);
 
 	this->Ajust_Background();
 }
-
 void MainWindow::on_horizontalSlider_Background_Threadhold_valueChanged(int value)
 {
-	Q_UNUSED(value)
+	this->m_Back_worker->setThreadhold(value);
 
 	this->Ajust_Background();
 }
 
+// 背景 文字
 void MainWindow::on_lineEdit_Background_Text_textEdited(const QString &arg1)
 {
 	Q_UNUSED(arg1)
 
 	this->Ajust_Background();
 }
-
 void MainWindow::on_fontComboBox_currentFontChanged(const QFont &f)
 {
 	Q_UNUSED(f)
 
 	this->Ajust_Background();
 }
-
 void MainWindow::on_spinBox_valueChanged(int arg1)
 {
 	Q_UNUSED(arg1)
 
 	this->Ajust_Background();
 }
-
 void MainWindow::on_horizontalSlider_Font_Space_valueChanged(int value)
 {
 	Q_UNUSED(value)
@@ -484,8 +473,6 @@ void MainWindow::on_horizontalSlider_Font_Space_valueChanged(int value)
 	this->Ajust_Background();
 }
 
-
-//C:\Users\pablo\Desktop\佛經畫\無量壽經\無量壽經.txt
 
 void MainWindow::on_pushButton_Sutra_File_clicked()
 {
@@ -555,27 +542,14 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
 		this->m_Background->show();
 }
 
+void MainWindow::Background_Image(QImage image)
+{
+	qDebug() << "get Background_Image";
+
+	this->m_Background->setPixmap(QPixmap::fromImage(image).copy());
+}
+
 void MainWindow::on_pushButton_clicked()
 {
-	this->m_Background->hide();
-
-	this->m_Scene->clearSelection();                                                  // Selections would also render to the file
-	this->m_Scene->setSceneRect(this->m_Scene->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
-	QImage image(this->m_Scene->sceneRect().size().toSize(), QImage::Format_ARGB32);  // Create the image with the exact size of the shrunk scene
-	image.fill(Qt::transparent);                                              // Start all pixels transparent
-
-	QPainter painter2(&image);
-	this->m_Scene->render(&painter2);
-
-	QString s = QFileDialog::getSaveFileName(this, tr("底稿輸出"), "",
-						 "Images (*.png *.xpm *.jpg)"
-						 );
-
-
-	image.save(s);
-
-
-//	pixmap2.save("C:/pablo.png");
-	this->m_Background->show();
-
+	this->m_Back_worker->Restart();
 }

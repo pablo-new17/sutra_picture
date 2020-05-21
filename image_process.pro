@@ -1,5 +1,4 @@
 QT       += core gui
-#QT       += virtualkeyboard
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Background_Image_Worker.cpp \
     MainWindow.cpp \
     MainWindow2.cpp \
     MainWindow3.cpp \
@@ -26,6 +26,7 @@ SOURCES += \
     main.cpp
 
 HEADERS += \
+    Background_Image_Worker.h \
     MainWindow.h \
     MainWindow2.h \
     MainWindow3.h \
@@ -38,25 +39,7 @@ FORMS += \
     MainWindow3.ui \
     MainWindow_1.ui
 
-DISTFILES += \
-        Release_Note.txt
-
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-CONFIG(release, debug|release): win32 {
-	SOURCE_FILE = $${OUT_PWD}/release/$${TARGET}.exe
-	SOURCE_FILE ~= s,/,\\,g
-	RELEASE_NOTE = $$PWD/Release_Note.txt
-	RELEASE_NOTE ~= s,/,\\,g
-
-	TARGET_DIR = F:/workspace/projects/image_process_Installer/packages/tw.amtb.sutra_picuture/data/
-	TARGET_DIR ~= s,/,\\,g
-
-#	CONFIG(release, debug|release):message($$QMAKE_COPY $${SOURCE_FILE} $${TARGET_FILE})
-
-	QMAKE_POST_LINK += $$QMAKE_COPY $$quote($${SOURCE_FILE}) $$quote($$TARGET_DIR) $$escape_expand(\\n\\t)
-	QMAKE_POST_LINK += $$QMAKE_COPY $$quote($${RELEASE_NOTE}) $$quote($$TARGET_DIR) $$escape_expand(\\n\\t)
-}
