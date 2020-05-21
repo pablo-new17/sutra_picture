@@ -92,7 +92,10 @@ void MainWindow::Windows_Loaded()
 
 	this->m_Back_thread.start();
 
+	ui->groupBox_Background_Picture->hide();
 	ui->toolBox->setCurrentIndex(2);
+
+
 }
 
 
@@ -127,7 +130,7 @@ void MainWindow::Ajust_Paper()
 
 void MainWindow::Ajust_Background()
 {
-	unsigned int Threadhold = ui->horizontalSlider_Background_Threadhold->value();
+//	unsigned int Threadhold = ui->horizontalSlider_Background_Threadhold->value();
 
 	if(ui->radioButton_Background_Picture->isChecked())
 	{
@@ -135,47 +138,49 @@ void MainWindow::Ajust_Background()
 	}
 	else
 	{
-		Threadhold = 1;
-		QFont font = ui->fontComboBox->currentFont();
-		font.setPointSize(ui->spinBox->value());
-		QFontMetrics fm(font);
-		QString Message = ui->lineEdit_Background_Text->text();
-		int Y = fm.ascent();
-		ui->horizontalSlider_Font_Space->setMaximum( Y );
-		ui->horizontalSlider_Font_Space->setMinimum( -Y );
-		if(ui->horizontalSlider_Font_Space->value() > Y )
-			ui->horizontalSlider_Font_Space->setValue( Y );
-		if(ui->horizontalSlider_Font_Space->value() < -Y)
-			ui->horizontalSlider_Font_Space->setValue( -Y );
+		this->m_Back_worker->Restart();
 
-		int Font_Total_Height = fm.height() + (fm.height() + ui->horizontalSlider_Font_Space->value() ) * ( Message.size() - 1);
+//		Threadhold = 1;
+//		QFont font = ui->fontComboBox->currentFont();
+//		font.setPointSize(ui->spinBox->value());
+//		QFontMetrics fm(font);
+//		QString Message = ui->lineEdit_Background_Text->text();
+//		int Y = fm.ascent();
+//		ui->horizontalSlider_Font_Space->setMaximum( Y );
+//		ui->horizontalSlider_Font_Space->setMinimum( -Y );
+//		if(ui->horizontalSlider_Font_Space->value() > Y )
+//			ui->horizontalSlider_Font_Space->setValue( Y );
+//		if(ui->horizontalSlider_Font_Space->value() < -Y)
+//			ui->horizontalSlider_Font_Space->setValue( -Y );
 
-		this->m_Background_Image = QPixmap(fm.horizontalAdvance(Message.at(0)), Font_Total_Height);
-		this->m_Background_Image.fill(Qt::transparent);
-		QPainter painter(&this->m_Background_Image);
-		painter.setFont(font);
-		painter.setPen(Qt::black);
+//		int Font_Total_Height = fm.height() + (fm.height() + ui->horizontalSlider_Font_Space->value() ) * ( Message.size() - 1);
 
-		for(int Index = 0; Index < Message.size(); Index++)
-		{
-			painter.drawText(0, Y, Message.at(Index));
+//		this->m_Background_Image = QPixmap(fm.horizontalAdvance(Message.at(0)), Font_Total_Height);
+//		this->m_Background_Image.fill(Qt::transparent);
+//		QPainter painter(&this->m_Background_Image);
+//		painter.setFont(font);
+//		painter.setPen(Qt::black);
 
-			Y += (fm.height() + ui->horizontalSlider_Font_Space->value());
-		}
+//		for(int Index = 0; Index < Message.size(); Index++)
+//		{
+//			painter.drawText(0, Y, Message.at(Index));
 
-		QPixmap Overlap_Pixmap = this->m_Background_Image.copy(this->m_Background_Image.rect());
-		QImage Grayscale_Image = Overlap_Pixmap.toImage();
+//			Y += (fm.height() + ui->horizontalSlider_Font_Space->value());
+//		}
 
-		for(int y = 0; y < Grayscale_Image.size().height(); y++)
-			for(int x = 0; x < Grayscale_Image.size().width(); x++)
-			{
-				if(Grayscale_Image.pixel(x, y) != 0)
-					Grayscale_Image.setPixel(x, y, 0xFF000000);
-				else
-					Grayscale_Image.setPixel(x, y, 0xFFFFFFFF);
-			}
+//		QPixmap Overlap_Pixmap = this->m_Background_Image.copy(this->m_Background_Image.rect());
+//		QImage Grayscale_Image = Overlap_Pixmap.toImage();
 
-		this->m_Background->setPixmap(QPixmap::fromImage(Grayscale_Image));
+//		for(int y = 0; y < Grayscale_Image.size().height(); y++)
+//			for(int x = 0; x < Grayscale_Image.size().width(); x++)
+//			{
+//				if(Grayscale_Image.pixel(x, y) != 0)
+//					Grayscale_Image.setPixel(x, y, 0xFF000000);
+//				else
+//					Grayscale_Image.setPixel(x, y, 0xFFFFFFFF);
+//			}
+
+//		this->m_Background->setPixmap(QPixmap::fromImage(Grayscale_Image));
 	}
 }
 
@@ -450,27 +455,53 @@ void MainWindow::on_horizontalSlider_Background_Threadhold_valueChanged(int valu
 // 背景 文字
 void MainWindow::on_lineEdit_Background_Text_textEdited(const QString &arg1)
 {
-	Q_UNUSED(arg1)
+	this->m_Back_worker->setText(arg1);
 
 	this->Ajust_Background();
 }
-void MainWindow::on_fontComboBox_currentFontChanged(const QFont &f)
+void MainWindow::on_fontComboBox_Backgraund_Text_currentFontChanged(const QFont &f)
 {
-	Q_UNUSED(f)
+	QFont font = f;
+	font.setPointSize(ui->spinBox_Background_Text_Font_Size->value());
+	QFontMetrics fm(font);
+	int Y = fm.ascent();
+	ui->horizontalSlider_Font_Space->setMaximum( Y );
+	ui->horizontalSlider_Font_Space->setMinimum( -Y );
+	if(ui->horizontalSlider_Font_Space->value() > Y )
+		ui->horizontalSlider_Font_Space->setValue( Y );
+	if(ui->horizontalSlider_Font_Space->value() < -Y)
+		ui->horizontalSlider_Font_Space->setValue( -Y );
+
+	this->m_Back_worker->setFont(font);
 
 	this->Ajust_Background();
 }
-void MainWindow::on_spinBox_valueChanged(int arg1)
+void MainWindow::on_spinBox_Background_Text_Font_Size_valueChanged(int arg1)
 {
-	Q_UNUSED(arg1)
+	QFont font = ui->fontComboBox_Backgraund_Text->currentFont();
+	font.setPointSize(arg1);
+	QFontMetrics fm(font);
+	int Y = fm.ascent();
+	ui->horizontalSlider_Font_Space->setMaximum( Y );
+	ui->horizontalSlider_Font_Space->setMinimum( -Y );
+	if(ui->horizontalSlider_Font_Space->value() > Y )
+		ui->horizontalSlider_Font_Space->setValue( Y );
+	if(ui->horizontalSlider_Font_Space->value() < -Y)
+		ui->horizontalSlider_Font_Space->setValue( -Y );
+
+	this->m_Back_worker->setFont(font);
 
 	this->Ajust_Background();
 }
 void MainWindow::on_horizontalSlider_Font_Space_valueChanged(int value)
 {
-	Q_UNUSED(value)
+	this->m_Back_worker->setFont_Space(value);
 
 	this->Ajust_Background();
+}
+void MainWindow::on_pushButton_Background_Show_clicked()
+{
+	this->m_Back_worker->Restart();
 }
 
 
@@ -542,6 +573,7 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
 		this->m_Background->show();
 }
 
+
 void MainWindow::Background_Image(QImage image)
 {
 	qDebug() << "get Background_Image";
@@ -549,7 +581,7 @@ void MainWindow::Background_Image(QImage image)
 	this->m_Background->setPixmap(QPixmap::fromImage(image).copy());
 }
 
-void MainWindow::on_pushButton_clicked()
-{
-	this->m_Back_worker->Restart();
-}
+
+
+
+

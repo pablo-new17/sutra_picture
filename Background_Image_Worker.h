@@ -7,6 +7,7 @@
 #include <QWaitCondition>
 #include <QPixmap>
 #include <QImage>
+#include <QFont>
 
 class Background_Image_Worker : public QObject
 {
@@ -33,6 +34,12 @@ public:
 	unsigned int getThreadhold() const;
 	void setThreadhold(unsigned int Threadhold);
 
+	QFont getFont() const;
+	void setFont(const QFont& Font);
+
+	int getFont_Space() const;
+	void setFont_Space(int Font_Space);
+
 public slots:
 	void run();
 	void Stop();
@@ -47,9 +54,13 @@ private:
 	QString		m_Text;
 	QString		m_Filename;
 	QSize		m_Boder_Size;
+	unsigned int	m_Threadhold;
 	QPixmap		m_Background_Image;
 	int		m_Image_Scale_Factor;
-	unsigned int	m_Threadhold;
+	QFont		m_Font;
+	int		m_Font_Space;
+
+
 
 	QImage		m_image;
 

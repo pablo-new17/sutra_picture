@@ -24,36 +24,29 @@ public:
 private slots:
 	void on_toolBox_currentChanged(int index);
 
+	// 紙張大小
 	void on_spinBox_Paper_Heigth_valueChanged(int arg1);
-
 	void on_spinBox_Paper_Width_valueChanged(int arg1);
-
 	void on_spinBox_Board_Top_valueChanged(int arg1);
-
 	void on_spinBox_Board_Bottom_valueChanged(int arg1);
-
 	void on_spinBox_Board_Left_valueChanged(int arg1);
-
 	void on_spinBox_Board_Right_valueChanged(int arg1);
 
+	// 背景 圖片
 	void on_radioButton_Background_Text_clicked();
-
 	void on_radioButton_Background_Picture_clicked();
-
 	void on_pushButton_Background_File_clicked();
-
 	void on_horizontalSlider_Background_Size_valueChanged(int value);
-
 	void on_horizontalSlider_Background_Threadhold_valueChanged(int value);
 
+	// 背景 文字
 	void on_lineEdit_Background_Text_textEdited(const QString &arg1);
-
-	void on_fontComboBox_currentFontChanged(const QFont &f);
-
-	void on_spinBox_valueChanged(int arg1);
-
+	void on_fontComboBox_Backgraund_Text_currentFontChanged(const QFont &f);
+	void on_spinBox_Background_Text_Font_Size_valueChanged(int arg1);
 	void on_horizontalSlider_Font_Space_valueChanged(int value);
+	void on_pushButton_Background_Show_clicked();
 
+	//經文
 	void on_pushButton_Sutra_File_clicked();
 
 	void on_fontComboBox_Sutra_currentFontChanged(const QFont &f);
@@ -73,7 +66,6 @@ private slots:
 	void Windows_Loaded();
 
 
-
 	void gentle_zoom(double factor);
 
 	void Ajust_Paper();
@@ -83,6 +75,10 @@ private slots:
 	void Ajust_Sutra();
 
 	void on_pushButton_clicked();
+
+
+
+
 
 private:
 	Ui::MainWindow *ui;

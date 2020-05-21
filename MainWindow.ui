@@ -341,7 +341,7 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QFontComboBox" name="fontComboBox"/>
+             <widget class="QFontComboBox" name="fontComboBox_Backgraund_Text"/>
             </item>
             <item row="2" column="0">
              <widget class="QLabel" name="label_17">
@@ -351,12 +351,15 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QSpinBox" name="spinBox">
+             <widget class="QSpinBox" name="spinBox_Background_Text_Font_Size">
               <property name="minimum">
-               <number>14</number>
+               <number>8</number>
               </property>
               <property name="maximum">
                <number>999</number>
+              </property>
+              <property name="value">
+               <number>900</number>
               </property>
              </widget>
             </item>
@@ -470,7 +473,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="pushButton_Background_Show">
            <property name="text">
             <string>PushButton</string>
            </property>
