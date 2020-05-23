@@ -46,7 +46,6 @@ public slots:
 	void Restart();
 
 signals:
-	void Send_Signal(int Count);
 	void Background_Image(QImage image);
 
 private:
@@ -59,10 +58,6 @@ private:
 	int		m_Image_Scale_Factor;
 	QFont		m_Font;
 	int		m_Font_Space;
-
-
-
-	QImage		m_image;
 
 private:	//common for Worker
 	bool		m_Stop;

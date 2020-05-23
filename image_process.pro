@@ -19,25 +19,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     Background_Image_Worker.cpp \
     MainWindow.cpp \
-    MainWindow2.cpp \
-    MainWindow3.cpp \
-    MainWindow_1.cpp \
-    PLable.cpp \
+    Sutra_Image_Worker.cpp \
     main.cpp
 
 HEADERS += \
     Background_Image_Worker.h \
     MainWindow.h \
-    MainWindow2.h \
-    MainWindow3.h \
-    MainWindow_1.h \
-    PLable.h
+    Sutra_Image_Worker.h
 
 FORMS += \
-    MainWindow.ui \
-    MainWindow2.ui \
-    MainWindow3.ui \
-    MainWindow_1.ui
+    MainWindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

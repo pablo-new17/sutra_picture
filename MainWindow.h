@@ -8,6 +8,7 @@
 #include <QThread>
 
 #include "Background_Image_Worker.h"
+#include "Sutra_Image_Worker.h"
 
 namespace Ui {
 	class MainWindow;
@@ -60,11 +61,11 @@ private slots:
 	void on_checkBox_stateChanged(int arg1);
 
 private slots:
-	void Background_Image(QImage image);
-
 
 	void Windows_Loaded();
 
+	void Background_Image(QImage image);
+	void Sutra_word(QGraphicsSimpleTextItem Word);
 
 	void gentle_zoom(double factor);
 
@@ -74,11 +75,8 @@ private slots:
 
 	void Ajust_Sutra();
 
+
 	void on_pushButton_clicked();
-
-
-
-
 
 private:
 	Ui::MainWindow *ui;
@@ -98,8 +96,11 @@ private:
 
 	QThread				m_Back_thread;
 	Background_Image_Worker*	m_Back_worker;
+	QThread				m_Sutra_thread;
+	Sutra_Image_Worker*		m_Sutra_worker;
 
-	QGraphicsSimpleTextItem* _test;
+
+	QGraphicsSimpleTextItem*	_test;
 
 
 private:

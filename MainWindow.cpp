@@ -44,6 +44,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	this->m_Scene->addItem(this->m_Background);
 	this->m_Scene->addItem(this->m_Sutra);
 
+	_test = new QGraphicsSimpleTextItem("中", this->m_Boder);
+	_test->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
+
+
 	ui->graphicsView->setScene(this->m_Scene);
 	ui->graphicsView->viewport()->installEventFilter(this);
 	ui->graphicsView->setMouseTracking(true);
@@ -54,6 +58,16 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
 	delete ui;
+
+	this->m_Back_worker->Stop();
+
+	this->m_Back_thread.quit();
+	this->m_Back_thread.wait();
+
+	this->m_Sutra_worker->Stop();
+
+	this->m_Sutra_thread.quit();
+	this->m_Sutra_thread.wait();
 }
 
 
@@ -67,7 +81,6 @@ int MainWindow::Pixel_to_mm(int Pixel)
 
 	return static_cast<int>(len_mm);
 }
-
 int MainWindow::mm_to_Pixel(int mm)
 {
 	QWindow *window = windowHandle();
@@ -84,18 +97,26 @@ void MainWindow::Windows_Loaded()
 {
 	this->_zoom_factor_base = 1.0015;
 
+	//底圖 產生
 	this->m_Back_worker = new Background_Image_Worker();
 	this->m_Back_worker->moveToThread(&this->m_Back_thread);
 	connect(&this->m_Back_thread, &QThread::started, this->m_Back_worker, &Background_Image_Worker::run);
 	connect(&this->m_Back_thread, &QThread::finished, this->m_Back_worker, &Background_Image_Worker::deleteLater);
 	connect(this->m_Back_worker, &Background_Image_Worker::Background_Image, this, &MainWindow::Background_Image);
-
 	this->m_Back_thread.start();
+
+	//經文 產生
+	this->m_Sutra_worker = new Sutra_Image_Worker();
+	this->m_Sutra_worker->moveToThread(&this->m_Sutra_thread);
+	connect(&this->m_Sutra_thread, &QThread::started, this->m_Sutra_worker, &Sutra_Image_Worker::run);
+	connect(&this->m_Sutra_thread, &QThread::finished, this->m_Sutra_worker, &Background_Image_Worker::deleteLater);
+	connect(this->m_Sutra_worker, &Sutra_Image_Worker::Sutra_word, this, &MainWindow::Sutra_word);
+	this->m_Sutra_thread.start();
+
+
 
 	ui->groupBox_Background_Picture->hide();
 	ui->toolBox->setCurrentIndex(2);
-
-
 }
 
 
@@ -118,20 +139,17 @@ void MainWindow::Ajust_Paper()
 	m_Boder_height = (m_Boder_height>=0)? m_Boder_height : 0;
 
 	//邊界 的位置與大小
-	this->m_Boder->setRect(m_Boder_Left_Width_Pixel, m_Boder_Top_Height_Pixel, m_Boder_width, m_Boder_height);
-	this->m_Sutra->setX(m_Boder_Left_Width_Pixel);
-	this->m_Sutra->setY(m_Boder_Top_Height_Pixel);
+	this->m_Boder->setRect(0, 0, m_Boder_width, m_Boder_height);
+	this->m_Boder->setPos(m_Boder_Left_Width_Pixel, m_Boder_Top_Height_Pixel);
+	this->m_Sutra->setPos(m_Boder_Left_Width_Pixel, m_Boder_Top_Height_Pixel);
 
 	//紙張 的位置
 	this->m_Paper->setRect(0, 0, Paper_width_Pixel, Paper_height_Pixel);
 	this->m_Scene->setSceneRect(0, 0, Paper_width_Pixel, Paper_height_Pixel);
 	ui->graphicsView->fitInView(0, 0 , Paper_width_Pixel , Paper_height_Pixel, Qt::KeepAspectRatio);
 }
-
 void MainWindow::Ajust_Background()
 {
-//	unsigned int Threadhold = ui->horizontalSlider_Background_Threadhold->value();
-
 	if(ui->radioButton_Background_Picture->isChecked())
 	{
 		this->m_Back_worker->Restart();
@@ -139,51 +157,8 @@ void MainWindow::Ajust_Background()
 	else
 	{
 		this->m_Back_worker->Restart();
-
-//		Threadhold = 1;
-//		QFont font = ui->fontComboBox->currentFont();
-//		font.setPointSize(ui->spinBox->value());
-//		QFontMetrics fm(font);
-//		QString Message = ui->lineEdit_Background_Text->text();
-//		int Y = fm.ascent();
-//		ui->horizontalSlider_Font_Space->setMaximum( Y );
-//		ui->horizontalSlider_Font_Space->setMinimum( -Y );
-//		if(ui->horizontalSlider_Font_Space->value() > Y )
-//			ui->horizontalSlider_Font_Space->setValue( Y );
-//		if(ui->horizontalSlider_Font_Space->value() < -Y)
-//			ui->horizontalSlider_Font_Space->setValue( -Y );
-
-//		int Font_Total_Height = fm.height() + (fm.height() + ui->horizontalSlider_Font_Space->value() ) * ( Message.size() - 1);
-
-//		this->m_Background_Image = QPixmap(fm.horizontalAdvance(Message.at(0)), Font_Total_Height);
-//		this->m_Background_Image.fill(Qt::transparent);
-//		QPainter painter(&this->m_Background_Image);
-//		painter.setFont(font);
-//		painter.setPen(Qt::black);
-
-//		for(int Index = 0; Index < Message.size(); Index++)
-//		{
-//			painter.drawText(0, Y, Message.at(Index));
-
-//			Y += (fm.height() + ui->horizontalSlider_Font_Space->value());
-//		}
-
-//		QPixmap Overlap_Pixmap = this->m_Background_Image.copy(this->m_Background_Image.rect());
-//		QImage Grayscale_Image = Overlap_Pixmap.toImage();
-
-//		for(int y = 0; y < Grayscale_Image.size().height(); y++)
-//			for(int x = 0; x < Grayscale_Image.size().width(); x++)
-//			{
-//				if(Grayscale_Image.pixel(x, y) != 0)
-//					Grayscale_Image.setPixel(x, y, 0xFF000000);
-//				else
-//					Grayscale_Image.setPixel(x, y, 0xFFFFFFFF);
-//			}
-
-//		this->m_Background->setPixmap(QPixmap::fromImage(Grayscale_Image));
 	}
 }
-
 void MainWindow::Ajust_Sutra()
 {
 	ui->lineEdit_Sutra->setEnabled(false);
@@ -529,8 +504,6 @@ void MainWindow::on_pushButton_Sutra_File_clicked()
 			Text->setPos(0, 0);
 		}
 
-		_test = this->m_Scene->addSimpleText("中");
-		_test->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
 
 
 		this->Ajust_Sutra();
@@ -581,7 +554,15 @@ void MainWindow::Background_Image(QImage image)
 	this->m_Background->setPixmap(QPixmap::fromImage(image).copy());
 }
 
+void MainWindow::Sutra_word(QGraphicsSimpleTextItem Word)
+{
+	Q_UNUSED(Word)
+}
 
 
-
-
+void MainWindow::on_pushButton_clicked()
+{
+	qDebug() << _test->pos();
+	qDebug() << m_Sutra->pos();
+	qDebug() << m_Background->pos();
+}
