@@ -8,14 +8,8 @@
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include "Sutra_Word_Data.h"
 
-typedef enum Sutra_Data_Enum
-{
-	Sutra_Data_Index,
-	Sutra_Data_Char,
-	Sutra_Data_Location,
-
-}Sutra_Data_Enum;
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -44,10 +38,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	this->m_Scene->addItem(this->m_Background);
 	this->m_Scene->addItem(this->m_Sutra);
 
-	_test = new QGraphicsSimpleTextItem("中", this->m_Boder);
-	_test->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
-
-
+//	_test = new QGraphicsSimpleTextItem("中", this->m_Boder);
+//	_test->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsFocusable);
 	ui->graphicsView->setScene(this->m_Scene);
 	ui->graphicsView->viewport()->installEventFilter(this);
 	ui->graphicsView->setMouseTracking(true);
@@ -92,7 +84,6 @@ int MainWindow::mm_to_Pixel(int mm)
 	return static_cast<int>(Pixel);
 }
 
-
 void MainWindow::Windows_Loaded()
 {
 	this->_zoom_factor_base = 1.0015;
@@ -114,11 +105,9 @@ void MainWindow::Windows_Loaded()
 	this->m_Sutra_thread.start();
 
 
-
 	ui->groupBox_Background_Picture->hide();
 	ui->toolBox->setCurrentIndex(2);
 }
-
 
 void MainWindow::Ajust_Paper()
 {
@@ -161,109 +150,7 @@ void MainWindow::Ajust_Background()
 }
 void MainWindow::Ajust_Sutra()
 {
-	ui->lineEdit_Sutra->setEnabled(false);
-	ui->fontComboBox_Sutra->setEnabled(false);
-	ui->spinBox_Sutra_Font->setEnabled(false);
-	ui->horizontalSlider_Sutra_FontSpace->setEnabled(false);
-	ui->horizontalSlider_Sutra_FontDistance->setEnabled(false);
-
-
-	QFont font = ui->fontComboBox_Sutra->currentFont();
-	font.setPointSize(ui->spinBox_Sutra_Font->value());
-	QFontMetrics fm(font);
-	int Width = this->m_Boder->rect().width();
-	int Height = this->m_Boder->rect().height();
-	int Word_Height = fm.height() + ui->horizontalSlider_Sutra_FontSpace->value();
-	int Word_Width = fm.height() + ui->horizontalSlider_Sutra_FontDistance->value();
-	int Word_X = 0;
-	int Word_Y = 0;
-	int Max_Word_Y = ( Height - 1)/ Word_Height - 1;
-	ui->horizontalSlider_Sutra_overlap->setMaximum(Word_Height * Word_Width);
-	bool Overlap = true;
-
-	QPixmap pixmap(this->m_Background->boundingRect().size().toSize());
-	pixmap.fill(Qt::transparent);
-
-	QPainter painter(&pixmap);
-	painter.setRenderHint(QPainter::Antialiasing);
-
-	QStyleOptionGraphicsItem opt;
-	this->m_Background->paint(&painter, &opt, this);
-
-	foreach(QGraphicsItem* Item, this->m_Sutra->childItems())
-	{
-		Overlap = true;
-		QGraphicsSimpleTextItem* Text = qgraphicsitem_cast<QGraphicsSimpleTextItem *>(Item);
-		if(Text)
-		{
-			Text->setFont(font);
-			do
-			{
-				Text->setPos(Width - Word_Width * (Word_X + 1), Word_Height * Word_Y);
-				Text->setData(Sutra_Data_Location, QPoint(Word_X, Word_Y));
-
-				Word_Y ++;
-				if(Word_Y > Max_Word_Y )
-				{
-					Word_Y = 0;
-					Word_X ++;
-				}
-
-				QPointF Position = this->m_Background->mapFromScene(this->m_Sutra->mapToScene(Text->pos()));
-				QPixmap Overlap_Pixmap = pixmap.copy(Position.x(), Position.y(), Word_Width, Word_Height);
-				if(pixmap.size() == Overlap_Pixmap.size())
-					Overlap = false;
-				else
-					Overlap = Check_Overlap(Overlap_Pixmap);
-
-				qDebug() << Overlap << Text->pos() << Word_X << Word_Y << Text->data(Sutra_Data_Index) << Text->data(Sutra_Data_Char) <<" ============ ";
-			}
-			while (Overlap);
-		}
-	}
-
-//	QPointF Position = this->m_Background->mapFromScene(_test->pos());
-//	QPixmap box = pixmap.copy(Position.x(), Position.y(), Word_Width, Word_Height);
-//	qDebug() << Position << pixmap.width() << pixmap.height() << box.width() << box.height();
-
-//	if(pixmap.size() != box.size())
-//		ui->label_test->setPixmap(box);
-
-//	_test->setFont(font);
-//	qDebug() << Check_Overlap(box) << "--------------";
-
-
-
-	ui->horizontalSlider_Sutra_FontSpace->setEnabled(true);
-	ui->horizontalSlider_Sutra_FontDistance->setEnabled(true);
-	ui->spinBox_Sutra_Font->setEnabled(true);
-	ui->fontComboBox_Sutra->setEnabled(true);
-	ui->lineEdit_Sutra->setEnabled(true);
-}
-
-
-bool MainWindow::Check_Overlap(QPixmap Overlap_Pixmap)
-{
-	int Count = 0;
-	QImage Source_Image = Overlap_Pixmap.toImage();
-	QImage Grayscale_Image(Overlap_Pixmap.size(), QImage::Format_Grayscale8);
-	QPainter painter(&Grayscale_Image);
-	painter.setCompositionMode(QPainter::CompositionMode_Source);
-	painter.fillRect(Grayscale_Image.rect(), Qt::transparent);
-	painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-	painter.drawImage(0, 0, Source_Image);
-	painter.end();
-
-	for(int y = 0; y < Grayscale_Image.size().height(); y++)
-		for(int x = 0; x < Grayscale_Image.size().width(); x++)
-		{
-//			qDebug() << x << y << Grayscale_Image.pixel(x, y);
-			if((Grayscale_Image.pixel(x, y) & 0xFF)==0) Count++;
-		}
-
-//	qDebug() << "Count" << Count;
-
-	return (Count > ui->horizontalSlider_Sutra_overlap->value());
+	this->m_Sutra_worker->Restart();
 }
 
 
@@ -303,9 +190,6 @@ void MainWindow::gentle_zoom(double factor)
 	ui->graphicsView->centerOn(target_scene_pos);
 }
 
-
-
-
 void MainWindow::on_toolBox_currentChanged(int index)
 {
 	switch (index)
@@ -313,6 +197,12 @@ void MainWindow::on_toolBox_currentChanged(int index)
 		case 0:
 		{
 			this->m_Background->setFlags(nullptr);
+
+			this->m_Sutra_worker->setBorder(QSize(this->m_Boder->rect().width(), this->m_Boder->rect().height()));
+			this->m_Sutra_worker->setBorder_Position(QPoint(this->m_Boder->x(), this->m_Boder->y()));
+			this->m_Sutra_worker->setBackground_Image(this->m_Background->pixmap().toImage());
+			this->m_Sutra_worker->setBackground_Position(QPoint(this->m_Background->pos().x(),
+									    this->m_Background->pos().y()));
 
 			this->m_Sutra->show();
 
@@ -477,9 +367,10 @@ void MainWindow::on_horizontalSlider_Font_Space_valueChanged(int value)
 void MainWindow::on_pushButton_Background_Show_clicked()
 {
 	this->m_Back_worker->Restart();
+	qDebug() << this->m_Background->x() << this->m_Background->y() << this->m_Background->pixmap().toImage().rect();
 }
 
-
+// 經文內容
 void MainWindow::on_pushButton_Sutra_File_clicked()
 {
 	QString fileName = QFileDialog::getOpenFileName(this, tr("選擇經文"),
@@ -494,50 +385,65 @@ void MainWindow::on_pushButton_Sutra_File_clicked()
 		QString Sutra_Content = Sutra.readAll();
 		Sutra.close();
 
+		foreach(QGraphicsItem* Item, this->m_Sutra->childItems())
+		{
+			this->m_Sutra->removeFromGroup(Item);
+		}
+
 		for(int Index = 0; Index < Sutra_Content.size(); Index++)
 		{
 			QString Word = Sutra_Content.at(Index);
 			QGraphicsSimpleTextItem* Text = new QGraphicsSimpleTextItem(Word, this->m_Sutra);
 			Text->setData(Sutra_Data_Index, Index);
 			Text->setData(Sutra_Data_Char, Word);
-			Text->setData(Sutra_Data_Location, QPoint(0, 0));
+			Text->setData(Sutra_Data_Location_X, 0);
+			Text->setData(Sutra_Data_Location_Y, 0);
 			Text->setPos(0, 0);
 		}
 
-
+		this->m_Sutra_worker->setSutra(this->m_Sutra);
 
 		this->Ajust_Sutra();
 	}
 }
-
 void MainWindow::on_fontComboBox_Sutra_currentFontChanged(const QFont &f)
 {
-	Q_UNUSED(f)
+	QFont font = f;
+	font.setPointSize(ui->spinBox_Sutra_Font->value());
+
+	this->m_Sutra_worker->setFont(font);
 
 	this->Ajust_Sutra();
 }
-
 void MainWindow::on_spinBox_Sutra_Font_valueChanged(int arg1)
 {
-	Q_UNUSED(arg1)
+	QFont font = ui->fontComboBox_Sutra->currentFont();
+	font.setPointSize(arg1);
+
+	this->m_Sutra_worker->setFont(font);
 
 	this->Ajust_Sutra();
 }
-
 void MainWindow::on_horizontalSlider_Sutra_FontSpace_valueChanged(int value)
 {
-	Q_UNUSED(value)
+	this->m_Sutra_worker->setFont_Space(value);
 
 	this->Ajust_Sutra();
 }
-
 void MainWindow::on_horizontalSlider_Sutra_FontDistance_valueChanged(int value)
 {
-	Q_UNUSED(value)
+	this->m_Sutra_worker->setFont_Distance(value);
+
+	this->Ajust_Sutra();
+}
+void MainWindow::on_horizontalSlider_Sutra_overlap_valueChanged(int value)
+{
+	this->m_Sutra_worker->setOverlap_Value(value);
 
 	this->Ajust_Sutra();
 }
 
+// 完稿
 void MainWindow::on_checkBox_stateChanged(int arg1)
 {
 	if(Qt::Checked == arg1 )
@@ -546,23 +452,25 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
 		this->m_Background->show();
 }
 
-
+// 畫面變動
 void MainWindow::Background_Image(QImage image)
 {
 	qDebug() << "get Background_Image";
 
 	this->m_Background->setPixmap(QPixmap::fromImage(image).copy());
 }
-
-void MainWindow::Sutra_word(QGraphicsSimpleTextItem Word)
+void MainWindow::Sutra_word(QGraphicsSimpleTextItem* Word)
 {
-	Q_UNUSED(Word)
+	QFont font = ui->fontComboBox_Sutra->currentFont();
+	font.setPointSize(ui->spinBox_Sutra_Font->value());
+
+	Word->setFont(font);
+	int X = Word->data(Sutra_Data_Location_X).toInt();
+	int Y = Word->data(Sutra_Data_Location_Y).toInt();
+
+	X -= this->m_Boder->x();
+	Y -= this->m_Boder->y();
+	Word->setPos(X, Y);
 }
 
 
-void MainWindow::on_pushButton_clicked()
-{
-	qDebug() << _test->pos();
-	qDebug() << m_Sutra->pos();
-	qDebug() << m_Background->pos();
-}

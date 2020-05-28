@@ -25,7 +25,8 @@ SOURCES += \
 HEADERS += \
     Background_Image_Worker.h \
     MainWindow.h \
-    Sutra_Image_Worker.h
+    Sutra_Image_Worker.h \
+    Sutra_Word_Data.h
 
 FORMS += \
     MainWindow.ui

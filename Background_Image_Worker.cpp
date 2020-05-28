@@ -6,7 +6,7 @@
 
 Background_Image_Worker::Background_Image_Worker(QObject *parent) : QObject(parent)
 {
-	qDebug() << "Start Worker";
+	qDebug() << "Start Background_Image_Worker";
 
 	this->m_Stop = false;
 	this->m_Restart = false;
@@ -19,20 +19,18 @@ Background_Image_Worker::Background_Image_Worker(QObject *parent) : QObject(pare
 
 Background_Image_Worker::~Background_Image_Worker()
 {
-//	this->m_Condition.wakeOne();
-
 	this->m_Mutex.lock();
 	this->m_Stop = true;
 	this->m_Mutex.unlock();
 
 	this->m_Condition.wakeAll();
 
-	qDebug() << "end of Worker";
+	qDebug() << "end of Background_Image_Worker";
 }
 
 void Background_Image_Worker::run()
 {
-	qDebug() << "run Worker";
+	qDebug() << "run Background_Image_Worker";
 
 	forever
 	{
@@ -51,7 +49,7 @@ void Background_Image_Worker::run()
 
 		if(isText && !Text.isEmpty())
 		{
-			qDebug() << "run Worker for text";
+			qDebug() << "run Background_Image_Worker for text";
 
 			QFontMetrics fm(Font);
 			int Y = fm.ascent();
@@ -72,7 +70,7 @@ void Background_Image_Worker::run()
 		}
 		else if(!Background_Image.isNull())
 		{
-			qDebug() << "run Worker for image";
+			qDebug() << "run Background_Image_Worker for image";
 
 			int Width = Boder_Size.width() / 100 * Scale_Factor;
 			int Height = Boder_Size.height() / 100 * Scale_Factor;
@@ -125,32 +123,32 @@ void Background_Image_Worker::run()
 
 	}
 
-	qDebug() << "done Worker";
+	qDebug() << "done Background_Image_Worker";
 }
 
 void Background_Image_Worker::Stop()
 {
-	qDebug() << "Stop Worker";
+	qDebug() << "Stop Background_Image_Worker";
 
 	this->m_Mutex.lock();
 	this->m_Stop = true;
 	this->m_Mutex.unlock();
 
-	qDebug() << "Stop Worker 2";
+	qDebug() << "Stop Background_Image_Worker 2";
 
 	this->m_Condition.wakeOne();
 }
 
 void Background_Image_Worker::Restart()
 {
-	qDebug() << "Restart Worker";
+	qDebug() << "Restart Background_Image_Worker";
 
 	this->m_Mutex.lock();
 	this->m_Stop = false;
 	this->m_Restart = true;
 	this->m_Mutex.unlock();
 
-	qDebug() << "Restart Worker 2";
+	qDebug() << "Restart Background_Image_Worker 2";
 
 	this->m_Condition.wakeOne();
 }
