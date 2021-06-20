@@ -70,6 +70,8 @@ private slots:
 	void Ajust_Background();
 	void Ajust_Sutra();
 
+	void on_pushButton_Final_Output_clicked();
+
 private:
 	Ui::MainWindow *ui;
 	int Pixel_to_mm(int Pixel);

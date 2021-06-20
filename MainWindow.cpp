@@ -413,6 +413,11 @@ void MainWindow::on_fontComboBox_Sutra_currentFontChanged(const QFont &f)
 
 	this->m_Sutra_worker->setFont(font);
 
+	QFontMetrics fm(font);
+	int Word_Height = fm.height() + ui->horizontalSlider_Sutra_FontSpace->value();
+	int Word_Width = fm.height() + ui->horizontalSlider_Sutra_FontDistance->value();
+	ui->horizontalSlider_Sutra_overlap->setMaximum(Word_Height * Word_Width);
+
 	this->Ajust_Sutra();
 }
 void MainWindow::on_spinBox_Sutra_Font_valueChanged(int arg1)
@@ -421,6 +426,11 @@ void MainWindow::on_spinBox_Sutra_Font_valueChanged(int arg1)
 	font.setPointSize(arg1);
 
 	this->m_Sutra_worker->setFont(font);
+
+	QFontMetrics fm(font);
+	int Word_Height = fm.height() + ui->horizontalSlider_Sutra_FontSpace->value();
+	int Word_Width = fm.height() + ui->horizontalSlider_Sutra_FontDistance->value();
+	ui->horizontalSlider_Sutra_overlap->setMaximum(Word_Height * Word_Width);
 
 	this->Ajust_Sutra();
 }
@@ -451,6 +461,27 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
 	else
 		this->m_Background->show();
 }
+void MainWindow::on_pushButton_Final_Output_clicked()
+{
+	this->m_Background->hide();
+
+	this->m_Scene->clearSelection();                                                  // Selections would also render to the file
+	this->m_Scene->setSceneRect(this->m_Scene->itemsBoundingRect());                  // Re-shrink the scene to it's bounding contents
+	QImage image(this->m_Scene->sceneRect().size().toSize(), QImage::Format_ARGB32);  // Create the image with the exact size of the shrunk scene
+	image.fill(Qt::transparent);                                              // Start all pixels transparent
+
+	QPainter painter2(&image);
+	this->m_Scene->render(&painter2);
+
+	QString s = QFileDialog::getSaveFileName(this, tr("底稿輸出"), "",
+						 "Images (*.png *.xpm *.jpg)"
+						 );
+
+
+	image.save(s);
+
+	this->m_Background->show();
+}
 
 // 畫面變動
 void MainWindow::Background_Image(QImage image)
@@ -472,5 +503,6 @@ void MainWindow::Sutra_word(QGraphicsSimpleTextItem* Word)
 	Y -= this->m_Boder->y();
 	Word->setPos(X, Y);
 }
+
 
 

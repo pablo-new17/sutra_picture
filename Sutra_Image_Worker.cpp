@@ -58,7 +58,7 @@ void Sutra_Image_Worker::run()
 //		qDebug()  << "back image:" << Background_Position << Background_Image.rect();
 		this->m_Mutex.unlock();
 
-		if(!Background_Image.isNull())
+		if(!Background_Image.isNull() && this->m_Sutra)
 		{
 			int Word_X = 0;
 			int Word_Y = 0;
